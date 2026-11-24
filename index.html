@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cosmo Gratte</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
+<style>
+/* Mise en page : barre du haut (crédits, étoiles, son), puis guichet à gauche et boutique à droite ; une seule colonne sur mobile */
+:root{
+  --void:#0b0820; --panel:#1b1546; --panel-2:#272063; --edge:#4a3fa8; --ink:#ece9ff; --dim:#a39bdc;
+  --gold:#ffd84a; --pink:#ff4dd8; --cyan:#4dffe1; --red:#ff4d6d; --green:#5dff7a;
+  --pixel:"Press Start 2P",ui-monospace,monospace; --term:"VT323",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{min-height:100%}
+body{margin:0;background:var(--void);color:var(--ink);font-family:var(--term);font-size:20px;line-height:1.15;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+img{image-rendering:pixelated}
+#sky,#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated}
+#sky{z-index:0}
+#confetti{z-index:50}
+.app{position:relative;z-index:1;max-width:1100px;margin:0 auto;display:grid;gap:16px}
+.pxbox{background:var(--panel);margin:4px;
+  box-shadow:0 -4px 0 0 var(--edge),0 4px 0 0 var(--edge),-4px 0 0 0 var(--edge),4px 0 0 0 var(--edge)}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px}
+h1{font-family:var(--pixel);font-weight:400;font-size:clamp(16px,3.4vw,26px);margin:0;color:var(--gold);text-shadow:3px 3px 0 #b8326b;letter-spacing:1px}
+.hud{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chip{font-family:var(--pixel);font-size:12px;background:var(--panel-2);padding:8px 10px;display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip img{width:18px;height:18px}
+.chip.money{color:var(--gold);font-size:14px}
+.chip.stars{color:var(--gold)}
+.chip .x{color:var(--cyan);font-size:10px}
+.iconbtn{all:unset;cursor:pointer;font-family:var(--pixel);font-size:10px;background:var(--panel-2);padding:9px 10px;color:var(--ink)}
+.iconbtn:focus-visible{outline:3px solid var(--cyan)}
+.main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+.col{display:grid;gap:16px;min-width:0}
+.section{padding:14px}
+.section h2{font-family:var(--pixel);font-weight:400;font-size:12px;margin:0 0 12px;color:var(--cyan);letter-spacing:1px}
+
+/* ---------- Guichet ---------- */
+.stagebox{padding:14px;display:grid;gap:14px;justify-items:center}
+.drones{display:flex;gap:6px;min-height:20px;flex-wrap:wrap;justify-content:center}
+.drones img{width:36px;height:20px;animation:bob 1.2s steps(4) infinite}
+@keyframes bob{50%{transform:translateY(-4px)}}
+#ticketArea{width:100%;display:grid;justify-items:center}
+.ticket{--t:#2f5fd6;width:100%;max-width:460px;background:var(--t);position:relative;
+  box-shadow:0 -4px 0 0 #000a,0 4px 0 0 #000a,-4px 0 0 0 #000a,4px 0 0 0 #000a,10px 10px 0 0 #00000066}
+.t-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 12px 6px;color:#fff;font-family:var(--pixel);font-size:12px;line-height:1.4;text-shadow:2px 2px 0 #0008}
+.t-price{color:var(--gold);white-space:nowrap}
+.t-rule{padding:0 12px 10px;color:#fff;font-size:19px;text-shadow:1px 1px 0 #0008}
+.t-play{position:relative;display:grid;gap:8px;padding:10px;margin:0 10px;background:#0f0b29;touch-action:none;user-select:none;-webkit-user-select:none}
+.zone{background:#221b55;min-height:84px;display:grid;place-items:center;align-content:center;gap:6px;padding:6px 4px;text-align:center;min-width:0}
+.zone img{width:36px;height:36px}
+.zone .lb{font-family:var(--pixel);font-size:10px;color:var(--ink);line-height:1.3}
+.zone .lb.gold{color:var(--gold)} .zone .lb.red{color:var(--red)} .zone .lb.dim{color:var(--dim)}
+.zone .num{font-family:var(--pixel);font-size:18px;color:var(--cyan)}
+.zone .cap{font-size:15px;color:var(--dim)}
+.zone.big{min-height:96px}
+.zone.big img{width:54px;height:54px}
+.zone.win{animation:flash .4s steps(1) 6;background:#4a3600}
+@keyframes flash{50%{background:#8a6a00}}
+#coat{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;cursor:crosshair;touch-action:none}
+.hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-family:var(--pixel);font-size:11px;background:var(--void);color:var(--gold);
+  padding:8px 10px;pointer-events:none;z-index:2;white-space:nowrap;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:.4}}
+.result{margin:10px 10px 0;padding:10px;text-align:center;background:#0b0820;font-family:var(--pixel);animation:pop .3s steps(3) both;
+  box-shadow:0 -4px 0 0 var(--gold),0 4px 0 0 var(--gold),-4px 0 0 0 var(--gold),4px 0 0 0 var(--gold)}
+.result .big{display:block;font-size:18px;color:var(--gold);margin-bottom:6px}
+.result small{font-family:var(--term);font-size:18px;color:var(--ink)}
+.result.lose{box-shadow:0 -4px 0 0 var(--red),0 4px 0 0 var(--red),-4px 0 0 0 var(--red),4px 0 0 0 var(--red)}
+.result.lose .big{color:var(--red)}
+@keyframes pop{from{transform:scale(.4)}to{transform:scale(1)}}
+.t-foot{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;font-size:16px;color:#ffffffb8}
+.empty{display:grid;justify-items:center;gap:12px;padding:30px 10px;text-align:center;color:var(--dim);max-width:360px}
+.empty img{width:72px;height:72px}
+#actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;min-height:44px;text-align:center;color:var(--dim)}
+
+/* ---------- Boutons ---------- */
+.btn{all:unset;box-sizing:border-box;cursor:pointer;font-family:var(--pixel);font-size:11px;line-height:1.5;padding:10px 12px;background:var(--pink);color:#1a0820;
+  box-shadow:0 4px 0 0 #8a1f73;text-align:center}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 0 #8a1f73}
+.btn:focus-visible{outline:3px solid var(--cyan);outline-offset:2px}
+.btn.gold{background:var(--gold);box-shadow:0 4px 0 0 #9c7a00}
+.btn[disabled]{background:#4b4470;color:#8e88b8;box-shadow:0 4px 0 0 #2b2550;cursor:not-allowed;transform:none}
+
+/* ---------- Boutique ---------- */
+.list{display:grid;gap:8px}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--panel-2);padding:8px 10px}
+.row img{width:32px;height:32px}
+.row .nm{font-family:var(--pixel);font-size:10px;line-height:1.5}
+.row .ds{font-size:17px;color:var(--dim)}
+.row .btn{font-size:10px;padding:8px 10px;min-width:84px}
+.row.locked .nm{color:var(--dim)}
+.lvl{color:var(--cyan)}
+.prest{display:grid;gap:10px}
+.prest .ds{font-size:18px;color:var(--dim)}
+.bar{height:14px;background:#0f0b29;position:relative;overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;background:repeating-linear-gradient(90deg,var(--gold) 0 8px,#ffb400 8px 12px)}
+.stats{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:18px;color:var(--dim)}
+.stats b{color:var(--ink);font-weight:400}
+footer{font-size:16px;color:var(--dim);text-align:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<canvas id="confetti"></canvas>
+
+<div class="app">
+  <header class="pxbox top">
+    <h1>COSMO GRATTE</h1>
+    <div class="hud">
+      <span class="chip money" title="Crédits"><img id="coinIcon" alt=""><span id="money">0</span> CR</span>
+      <span class="chip stars" title="Étoiles dorées"><img id="starIcon" alt=""><span id="stars">0</span> <span class="x" id="multTxt">x1,00</span></span>
+      <button class="iconbtn" id="mute" type="button">SON : OUI</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="col">
+      <section class="pxbox stagebox" aria-label="Guichet">
+        <div class="drones" id="drones"></div>
+        <div id="ticketArea"></div>
+        <div id="actions"></div>
+      </section>
+      <section class="pxbox section">
+        <h2>STATISTIQUES</h2>
+        <div class="stats" id="stats"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="pxbox section">
+        <h2>TICKETS</h2>
+        <div class="list" id="tickets"></div>
+      </section>
+      <section class="pxbox section">
+        <h2>AMELIORATIONS</h2>
+        <div class="list" id="upgrades"></div>
+      </section>
+      <section class="pxbox section">
+        <h2>PRESTIGE : ETOILES DOREES</h2>
+        <div class="prest" id="prestige"></div>
+      </section>
+    </div>
+  </div>
+  <footer>Ta partie est sauvegardée dans ce navigateur.</footer>
+</div>
+
+<script>
+/* =================== Outils =================== */
+const $=s=>document.querySelector(s);
+const rint=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function fmt(n){
+  n=Math.floor(n);
+  if(n<1e5)return n.toLocaleString('fr-FR').replace(/\s/g,' ');
+  for(const[v,s]of[[1e9,'G'],[1e6,'M'],[1e3,'k']])if(n>=v){const q=n/v;return q.toFixed(q<10?2:q<100?1:0).replace('.',',')+s}
+}
+const reduceMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* =================== Sprites pixel art =================== */
+const PAL={Y:'#ffd84a',O:'#ff9d2e',P:'#b07cff',D:'#7a4fd6',R:'#ff4d6d',W:'#f4f2ff',B:'#4dc9ff',G:'#5dff7a',K:'#05030f',
+  M:'#d9d4c7',S:'#a9a294',C:'#7ff0ff',N:'#3b7bff',L:'#b8c0d8',A:'#7f8aa8',V:'#ff4dd8',T:'#1fb5a0',Q:'#4dffe1',E:'#2a8a3a'};
+const SPR={
+  star:['....Y....','....Y....','...YYY...','YYYYYYYYY','.YYYOYYY.','..YYYYY..','..YY.YY..','.YY...YY.','.Y.....Y.'],
+  planet:['...PPP...','..PPPPP..','.PPDPPPP.','OOOOOOOOO','.PPPPDPP.','..PDPPP..','...PPP...'],
+  rocket:['....R....','...RRR...','...WWW...','...WBW...','...WWW...','..RWWWR..','.RRWWWRR.','...O.O...','..O...O..'],
+  alien:['..G...G..','...G.G...','..GGGGG..','.GGKGKGG.','.GGGGGGG.','..GKKKG..','...GGG...','..G...G..'],
+  moon:['...MMM...','..MMMMM..','.MMSMMMM.','.MMMMMSM.','.MSMMMMM.','.MMMMSMM.','..MMMMM..','...MMM...'],
+  comet:['N........','.NC......','..NCC....','...CCC...','....CWWW.','....WWWWW','.....WWW.','......W..'],
+  ufo:['...GGG...','..GGGGG..','.LLLLLLL.','LALALALAL','.LLLLLLL.','..Y.Y.Y..'],
+  hole:['..PPPPP..','.PVVVVVP.','PVPKKKPVP','PVKKKKKVP','PVKKKKKVP','PVPKKKPVP','.PVVVVVP.','..PPPPP..'],
+  gem:['..QQQQQ..','.QWQQQTQ.','QQQQQQQTT','.QQQQQTT.','..QQQTT..','...QTT...','....T....'],
+  coin:['.YYYY.','YOOOOY','YOYYOY','YOYYOY','YOOOOY','.YYYY.'],
+  drone:['..W...W..','.AAAAAAA.','AABLLLBAA','.AAAAAAA.','..R...R..']
+};
+const sprCache={};
+function spr(name){
+  if(sprCache[name])return sprCache[name];
+  const rows=SPR[name],w=Math.max(...rows.map(r=>r.length)),h=rows.length;
+  const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');
+  rows.forEach((row,y)=>[...row].forEach((ch,xx)=>{if(ch!=='.'){x.fillStyle=PAL[ch];x.fillRect(xx,y,1,1)}}));
+  return sprCache[name]=c.toDataURL();
+}
+
+/* =================== Sons (synthé 8 bits) =================== */
+let ac=null,noiseBuf=null;
+function audio(){
+  if(S.muted)return null;
+  if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)()}catch(e){return null}}
+  if(ac.state==='suspended')ac.resume();
+  return ac;
+}
+function tone(freq,dur,type='square',vol=.05,when=0,slideTo){
+  const a=audio();if(!a)return;const t=a.currentTime+when;
+  const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.setValueAtTime(freq,t);
+  if(slideTo)o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g).connect(a.destination);o.start(t);o.stop(t+dur+.02);
+}
+const snd={
+  scratch(){const a=audio();if(!a)return;
+    if(!noiseBuf){noiseBuf=a.createBuffer(1,Math.floor(a.sampleRate*.05),a.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}
+    const s=a.createBufferSource();s.buffer=noiseBuf;const f=a.createBiquadFilter();f.type='bandpass';f.frequency.value=2200+Math.random()*1800;
+    const g=a.createGain();g.gain.value=.07;s.connect(f).connect(g).connect(a.destination);s.start()},
+  reveal(){tone(660,.07,'square',.04);tone(990,.06,'square',.03,.05)},
+  buy(){tone(440,.06,'square',.04);tone(880,.08,'square',.04,.06)},
+  win(){[523,659,784,1046].forEach((f,i)=>tone(f,.09,'square',.05,i*.08))},
+  fanfare(){[523,659,784,1046,784,1046,1318].forEach((f,i)=>tone(f,.14,'square',.05,i*.11));tone(130,.8,'triangle',.08,0)},
+  lose(){tone(330,.35,'sawtooth',.04,0,110)},
+  prestige(){[392,523,659,784,1046,1318,1568].forEach((f,i)=>tone(f,.18,'triangle',.07,i*.09))}
+};
+
+/* =================== Données du jeu =================== */
+const PX=6; // un « pixel » de grattage = 6 px à l'écran
+const TYPES=[
+  {id:'dust',name:"Poussière d'Étoile",cost:2,unlock:0,color:'#2f5fd6',icon:'star',short:'3 symboles identiques',
+   rule:'Trouve 3 symboles identiques : tu gagnes leur valeur.',lose:'Pas de trio cette fois.',
+   table:[[2,.22],[4,.11],[10,.06],[25,.025],[100,.005]],
+   build(prize){
+     const SP={2:'moon',4:'star',10:'rocket',25:'planet',100:'gem'},vals=[2,4,10,25,100],cells=[],cnt={};
+     if(prize){for(let i=0;i<3;i++)cells.push(prize);cnt[prize]=3}
+     while(cells.length<6){const v=pick(vals);if((cnt[v]||0)>=2)continue;cnt[v]=(cnt[v]||0)+1;cells.push(v)}
+     return{cols:3,zones:shuffle(cells).map(v=>({s:SP[v],lb:v+' CR',win:!!prize&&v===prize}))};
+   }},
+  {id:'alien',name:'Code Alien',cost:10,unlock:40,color:'#1f8f4a',icon:'alien',short:'Codes gagnants',
+   rule:'Si un de tes codes correspond à un code gagnant, tu remportes le gain écrit dessous.',lose:'Aucun code ne correspond.',
+   table:[[10,.2],[20,.1],[50,.05],[150,.025],[500,.005]],
+   build(prize){
+     const pool=shuffle(Array.from({length:30},(_,i)=>i+1)),w=[pool[0],pool[1]],others=pool.slice(2),decoy=[10,20,50,150,500,1000];
+     const cells=Array.from({length:6},(_,i)=>({n:others[i],p:pick(decoy),win:false}));
+     if(prize)cells[rint(0,5)]={n:pick(w),p:prize,win:true};
+     return{cols:6,zones:[
+       ...w.map(n=>({s:'alien',num:n,span:3,cap:'code gagnant',win:!!prize})),
+       ...cells.map(c=>({num:c.n,lb:c.p+' CR',cls:'gold',span:2,win:c.win}))]};
+   }},
+  {id:'hole',name:'Trou Noir',cost:50,unlock:300,color:'#6a2fc0',icon:'hole',short:'Gare aux trous noirs',
+   rule:'Additionne tous les montants. Mais 3 trous noirs et tout est aspiré !',lose:'3 trous noirs : tout est aspiré !',
+   table:[[40,.2],[80,.13],[200,.08],[600,.03],[2500,.005]],
+   build(prize){
+     const amt=(v,win)=>({s:'gem',lb:'+'+fmt(v),cls:'gold',win}),hole=()=>({s:'hole',lb:'AÏE',cls:'red'}),empty=()=>({s:'moon',lb:'0',cls:'dim'});
+     const cells=[];
+     if(prize){
+       const units=prize/5,k=Math.min(rint(2,4),units),parts=Array(k).fill(1);
+       for(let i=0;i<units-k;i++)parts[rint(0,k-1)]++;
+       parts.forEach(u=>cells.push(amt(u*5,true)));
+       for(let i=rint(0,2);i>0;i--)cells.push(hole());
+     }else{
+       for(let i=0;i<3;i++)cells.push(hole());
+       for(let i=rint(2,4);i>0;i--)cells.push(amt(pick([10,20,40,80,200]),false));
+     }
+     while(cells.length<9)cells.push(empty());
+     return{cols:3,zones:shuffle(cells)};
+   }},
+  {id:'ourse',name:'Grande Ourse',cost:250,unlock:2500,color:'#c2522a',icon:'planet',short:'Lignes de 3',
+   rule:'Aligne 3 symboles identiques sur une même ligne pour gagner leur valeur.',lose:'Aucune ligne complète.',
+   table:[[200,.2],[500,.1],[1000,.06],[3000,.03],[15000,.006]],
+   build(prize){
+     const SP={200:'moon',500:'star',1000:'rocket',3000:'planet',15000:'ufo'},vals=[200,500,1000,3000,15000];
+     const wr=prize?rint(0,2):-1,rows=[];
+     for(let r=0;r<3;r++){
+       if(r===wr){rows.push([prize,prize,prize]);continue}
+       let row;do{row=[pick(vals),pick(vals),pick(vals)]}while(row[0]===row[1]&&row[1]===row[2]);rows.push(row);
+     }
+     return{cols:3,zones:rows.flatMap((row,r)=>row.map(v=>({s:SP[v],lb:fmt(v),win:r===wr})))};
+   }},
+  {id:'nova',name:'Supernova',cost:2000,unlock:25000,color:'#c22a63',icon:'comet',short:'Base × multiplicateur',
+   rule:'Trouve 2 multiplicateurs identiques : gain = base × multiplicateur.',lose:'Aucun multiplicateur en double.',
+   table:[[2000,.2],[4000,.12],[10000,.06],[30000,.025],[100000,.005]],
+   build(prize){
+     const M=[1,2,3,5,10];let B,m,mm=0;
+     if(prize){mm=pick([1,2,5,10]);B=prize/mm;m=shuffle([mm,mm,...shuffle(M.filter(x=>x!==mm)).slice(0,2)])}
+     else{B=pick([500,1000,2000,5000]);m=shuffle(M.slice()).slice(0,4)}
+     return{cols:4,zones:[{s:'star',big:true,span:4,lb:'BASE '+fmt(B)+' CR',cls:'gold',win:!!prize},
+       ...m.map(x=>({s:'comet',lb:'x'+x,win:!!prize&&x===mm}))]};
+   }}
+];
+const TYPE=Object.fromEntries(TYPES.map(t=>[t.id,t]));
+const UPG=[
+  {id:'laser',name:'Laser de grattage',icon:'gem',desc:'Gratte une zone plus large.',max:5,cost:l=>Math.round(8*Math.pow(2.6,l))},
+  {id:'drones',name:'Drone gratteur',icon:'drone',desc:'Gratte le ticket à ta place.',max:10,cost:l=>Math.round(20*Math.pow(2.1,l))},
+  {id:'luck',name:'Météorite porte-bonheur',icon:'ufo',desc:'Plus de tickets gagnants.',max:8,cost:l=>Math.round(35*Math.pow(2.8,l))},
+  {id:'auto',name:'Pilote automatique',icon:'rocket',desc:'Rachète le même ticket tout seul.',max:1,cost:()=>150}
+];
+
+/* =================== État et sauvegarde =================== */
+const KEY='cosmo-gratte-v1';
+const DEF={money:5,stars:0,run:0,total:0,up:{laser:0,drones:0,luck:0,auto:0},unl:['dust'],st:{tickets:0,best:0,prest:0},T:null,last:'dust',muted:false,seen:false};
+let S=JSON.parse(JSON.stringify(DEF)),fresh=true;
+try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S={...S,...o,up:{...S.up,...o.up},st:{...S.st,...o.st}};fresh=false}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const mult=()=>1+0.25*S.stars;
+
+function rollPrize(table){
+  const f=1+0.12*S.up.luck;let ws=table.map(([v,p])=>[v,p*f]);
+  const tot=ws.reduce((a,[,p])=>a+p,0);if(tot>.9)ws=ws.map(([v,p])=>[v,p*.9/tot]);
+  let r=Math.random();for(const[v,p]of ws){if((r-=p)<0)return v}return 0;
+}
+function makeTicket(id){
+  const t=TYPE[id],prize=rollPrize(t.table),b=t.build(prize);
+  return{id,prize,cols:b.cols,zones:b.zones,rev:b.zones.map(()=>false),done:false,pay:0,serial:'CG-'+rint(10000,99999)};
+}
+if(fresh)S.T=makeTicket('dust');
+
+/* =================== Actions =================== */
+function buy(id){
+  const t=TYPE[id];
+  if(!t||!S.unl.includes(id)||(S.T&&!S.T.done)||S.money<t.cost)return;
+  S.money-=t.cost;S.last=id;S.T=makeTicket(id);snd.buy();
+  renderTicket();renderAll();save();
+}
+function unlock(id){const t=TYPE[id];if(S.unl.includes(id)||S.money<t.unlock)return;S.money-=t.unlock;S.unl.push(id);snd.buy();renderAll();save()}
+function upgrade(id){const u=UPG.find(x=>x.id===id),l=S.up[id];if(l>=u.max)return;const c=u.cost(l);if(S.money<c)return;S.money-=c;S.up[id]++;snd.buy();renderAll();save()}
+let confirmP=false,confirmTimer;
+function prestige(){
+  const gain=starGain();if(gain<1)return;
+  if(!confirmP){confirmP=true;renderPrestige();clearTimeout(confirmTimer);confirmTimer=setTimeout(()=>{confirmP=false;renderPrestige()},4000);return}
+  confirmP=false;
+  const keep={stars:S.stars+gain,total:S.total,st:{...S.st,prest:S.st.prest+1},muted:S.muted,seen:true};
+  S={...JSON.parse(JSON.stringify(DEF)),...keep};S.T=makeTicket('dust');
+  snd.prestige();confetti(260);renderTicket();renderAll();save();
+}
+const starGain=()=>Math.floor(Math.sqrt(S.run/1000));
+
+/* =================== Couche à gratter =================== */
+let coat=null,cctx=null,cw=0,ch=0,rects=[],dirty=false,down=false,last=null,lastSnd=0;
+function buildCoat(){
+  coat=$('#coat');if(!coat||!S.T)return;
+  const play=$('#play'),r=play.getBoundingClientRect();if(!r.width)return;
+  cw=Math.ceil(r.width/PX);ch=Math.ceil(r.height/PX);coat.width=cw;coat.height=ch;
+  cctx=coat.getContext('2d',{willReadFrequently:true});
+  const sx=cw/r.width,sy=ch/r.height;
+  rects=[...play.querySelectorAll('.zone')].map(el=>{const q=el.getBoundingClientRect();
+    return{x0:Math.floor((q.left-r.left)*sx),y0:Math.floor((q.top-r.top)*sy),x1:Math.ceil((q.right-r.left)*sx),y1:Math.ceil((q.bottom-r.top)*sy)}});
+  cctx.fillStyle='#8c8fb8';cctx.fillRect(0,0,cw,ch);
+  cctx.fillStyle='#9da1c9';for(let y=0;y<ch;y++)for(let x=y%2;x<cw;x+=2)cctx.fillRect(x,y,1,1);
+  for(let i=0;i<cw*ch/40;i++){cctx.fillStyle=pick(['#e8eaff','#c4c7ea','#ffd84a']);cctx.fillRect(rint(0,cw),rint(0,ch),1,1)}
+  rects.forEach(z=>{
+    cctx.fillStyle='#62659a';const w=z.x1-z.x0,h=z.y1-z.y0;
+    cctx.fillRect(z.x0,z.y0,w,1);cctx.fillRect(z.x0,z.y1-1,w,1);cctx.fillRect(z.x0,z.y0,1,h);cctx.fillRect(z.x1-1,z.y0,1,h);
+    const cx=(z.x0+z.x1)>>1,cy=(z.y0+z.y1)>>1;cctx.fillStyle='#e4e6ff';
+    [[0,-2],[0,-1],[-2,0],[-1,0],[0,0],[1,0],[2,0],[0,1],[0,2]].forEach(([a,b])=>cctx.fillRect(cx+a,cy+b,1,1));
+  });
+  S.T.rev.forEach((v,i)=>{if(v)clearZone(i)});
+  coat.addEventListener('pointerdown',e=>{down=true;last=null;try{coat.setPointerCapture(e.pointerId)}catch(_){};scratchAt(e);hideHint()});
+  coat.addEventListener('pointermove',e=>{if(down)scratchAt(e)});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(ev=>coat.addEventListener(ev,()=>{down=false;last=null;dirty=true;check()}));
+}
+function scratchAt(e){
+  const r=coat.getBoundingClientRect();
+  const x=Math.floor((e.clientX-r.left)/r.width*cw),y=Math.floor((e.clientY-r.top)/r.height*ch);
+  line(last||{x,y},{x,y},2+S.up.laser);last={x,y};dirty=true;
+  const n=performance.now();if(n-lastSnd>70){snd.scratch();lastSnd=n}
+}
+function line(a,b,rad){const st=Math.max(Math.abs(b.x-a.x),Math.abs(b.y-a.y),1);for(let i=0;i<=st;i++)dot(Math.round(a.x+(b.x-a.x)*i/st),Math.round(a.y+(b.y-a.y)*i/st),rad)}
+function dot(x,y,r){for(let dy=-r;dy<=r;dy++){const w=Math.floor(Math.sqrt(r*r+1-dy*dy));cctx.clearRect(x-w,y+dy,2*w+1,1)}}
+function clearZone(i){const z=rects[i];if(z&&cctx)cctx.clearRect(z.x0,z.y0,z.x1-z.x0,z.y1-z.y0)}
+function check(){
+  if(!dirty||!coat||!cctx||!S.T||S.T.done)return;dirty=false;
+  const d=cctx.getImageData(0,0,cw,ch).data;
+  rects.forEach((z,i)=>{
+    if(S.T.rev[i])return;let tot=0,cl=0;
+    for(let y=z.y0+1;y<z.y1-1;y++)for(let x=z.x0+1;x<z.x1-1;x++){tot++;if(d[(y*cw+x)*4+3]===0)cl++}
+    if(tot&&cl/tot>=.5){S.T.rev[i]=true;clearZone(i);snd.reveal()}
+  });
+  if(S.T.rev.every(Boolean))finish();
+}
+let autoTimer;
+function finish(){
+  const T=S.T,t=TYPE[T.id];T.done=true;
+  const pay=Math.floor(T.prize*mult());T.pay=pay;
+  S.money+=pay;S.run+=pay;S.total+=pay;S.st.tickets++;if(pay>S.st.best)S.st.best=pay;
+  if(pay>0){
+    const big=T.prize>=t.cost*5;big?snd.fanfare():snd.win();
+    if(big)confetti(180);else if(T.prize>=t.cost*2)confetti(60);
+  }else snd.lose();
+  down=false;renderTicket();renderAll();save();
+  if(S.up.auto){clearTimeout(autoTimer);autoTimer=setTimeout(()=>{const id=S.last;if(S.T&&S.T.done&&S.money>=TYPE[id].cost)buy(id)},1500)}
+}
+function hideHint(){if(!S.seen){S.seen=true;save()}const h=$('.hint');if(h)h.remove()}
+
+/* Drones : coups de grattage automatiques */
+let droneAcc=0;
+setInterval(()=>{
+  if(S.up.drones&&coat&&cctx&&S.T&&!S.T.done&&rects.length){
+    droneAcc+=S.up.drones*.7*.12;
+    while(droneAcc>=1){droneAcc--;
+      const idx=S.T.rev.map((v,i)=>v?-1:i).filter(i=>i>=0&&rects[i]);if(!idx.length)break;
+      const z=rects[pick(idx)],p=()=>({x:rint(z.x0+1,z.x1-2),y:rint(z.y0+1,z.y1-2)});
+      line(p(),p(),2);dirty=true;
+    }
+  }
+  check();
+},120);
+
+/* =================== Affichage =================== */
+function zoneHTML(z,i,done){
+  return `<div class="zone${z.big?' big':''}${done&&z.win?' win':''}"${z.span?` style="grid-column:span ${z.span}"`:''} data-z="${i}">`+
+    (z.s?`<img src="${spr(z.s)}" alt="">`:'')+(z.num!=null?`<span class="num">${z.num}</span>`:'')+
+    (z.lb?`<span class="lb ${z.cls||''}">${z.lb}</span>`:'')+(z.cap?`<span class="cap">${z.cap}</span>`:'')+`</div>`;
+}
+function renderTicket(){
+  const area=$('#ticketArea'),T=S.T;coat=null;cctx=null;rects=[];
+  if(!T){area.innerHTML=`<div class="empty"><img src="${spr('rocket')}" alt="">Ton guichet est vide. Achète un ticket dans la boutique.</div>`;return}
+  const t=TYPE[T.id];
+  let res='';
+  if(T.done)res=T.pay>0
+    ?`<div class="result"><span class="big">+${fmt(T.pay)} CR</span><small>${S.stars?`Bonus étoiles x${mult().toFixed(2).replace('.',',')} inclus`:'Ticket gagnant !'}</small></div>`
+    :`<div class="result lose"><span class="big">PERDU</span><small>${t.lose}</small></div>`;
+  area.innerHTML=`<div class="ticket" style="--t:${t.color}">
+    <div class="t-head"><span>${t.name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()}</span><span class="t-price">${fmt(t.cost)} CR</span></div>
+    <div class="t-rule">${t.rule}</div>
+    <div class="t-play" id="play" style="grid-template-columns:repeat(${T.cols},minmax(0,1fr))">
+      ${T.zones.map((z,i)=>zoneHTML(z,i,T.done)).join('')}
+      ${T.done?'':'<canvas id="coat" aria-label="Surface à gratter"></canvas>'}
+      ${!T.done&&!S.seen?'<span class="hint">GRATTE ICI !</span>':''}
+    </div>
+    ${res}
+    <div class="t-foot"><span>N° ${T.serial}</span><span>Agence spatiale de grattage</span></div>
+  </div>`;
+  if(!T.done)requestAnimationFrame(buildCoat);
+}
+function renderHUD(){
+  $('#money').textContent=fmt(S.money);$('#stars').textContent=S.stars;
+  $('#multTxt').textContent='x'+mult().toFixed(2).replace('.',',');
+  $('#mute').textContent=S.muted?'SON : NON':'SON : OUI';
+  $('#stats').innerHTML=`<span>Tickets grattés : <b>${fmt(S.st.tickets)}</b></span><span>Plus gros gain : <b>${fmt(S.st.best)} CR</b></span>
+    <span>Gains totaux : <b>${fmt(S.total)} CR</b></span><span>Prestiges : <b>${S.st.prest}</b></span>`;
+  $('#drones').innerHTML=Array.from({length:S.up.drones},(_,i)=>`<img src="${spr('drone')}" style="animation-delay:${-i*.15}s" alt="">`).join('');
+}
+function renderActions(){
+  const T=S.T,a=$('#actions');
+  if(T&&!T.done){a.innerHTML=S.up.drones?'Tes drones grattent avec toi…':'Gratte toutes les cases pour découvrir ton gain.';return}
+  const t=TYPE[S.last];
+  let h=`<button class="btn" data-buy="${t.id}" ${S.money>=t.cost?'':'disabled'}>Racheter : ${t.name} (${fmt(t.cost)} CR)</button>`;
+  if(S.money<2)h+=`<button class="btn gold" data-act="sos">Signal de détresse (+5 CR)</button>`;
+  a.innerHTML=h;
+}
+function renderShop(){
+  const active=S.T&&!S.T.done;
+  $('#tickets').innerHTML=TYPES.map(t=>{
+    const un=S.unl.includes(t.id);
+    const btn=un?`<button class="btn" data-buy="${t.id}" ${active||S.money<t.cost?'disabled':''}>${fmt(t.cost)} CR</button>`
+               :`<button class="btn gold" data-unlock="${t.id}" ${S.money<t.unlock?'disabled':''}>Licence<br>${fmt(t.unlock)} CR</button>`;
+    return `<div class="row${un?'':' locked'}"><img src="${spr(t.icon)}" alt=""><div><div class="nm">${t.name}</div><div class="ds">${un?t.short:'Licence à acheter'}</div></div>${btn}</div>`;
+  }).join('');
+  $('#upgrades').innerHTML=UPG.map(u=>{
+    const l=S.up[u.id],max=l>=u.max,c=u.cost(l);
+    const lv=u.max>1?`${l}/${u.max}`:(l?'OK':'');
+    return `<div class="row"><img src="${spr(u.icon)}" alt=""><div><div class="nm">${u.name} <span class="lvl">${lv}</span></div><div class="ds">${u.desc}</div></div>
+      <button class="btn" data-up="${u.id}" ${max||S.money<c?'disabled':''}>${max?'MAX':fmt(c)+' CR'}</button></div>`;
+  }).join('');
+  renderPrestige();
+}
+function renderPrestige(){
+  const g=starGain(),prev=g*g*1000,next=(g+1)*(g+1)*1000,pct=Math.max(0,Math.min(100,(S.run-prev)/(next-prev)*100));
+  $('#prestige').innerHTML=`<div class="ds">Échange ta fortune contre des étoiles dorées. Chaque étoile donne +25 % sur tous tes gains, pour toujours. Crédits, tickets et améliorations repartent à zéro.</div>
+    <div class="stats"><span>Étoiles : <b>${S.stars}</b></span><span>Bonus actuel : <b>x${mult().toFixed(2).replace('.',',')}</b></span></div>
+    <div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+    <div class="ds">Gagné depuis le dernier prestige : ${fmt(S.run)} CR. ${g?`Étoile suivante à ${fmt(next)} CR.`:'Première étoile à 1 000 CR.'}</div>
+    <button class="btn gold" id="prestBtn" type="button" ${g<1?'disabled':''}>${confirmP?'Sûr ? Clique encore pour confirmer':g<1?'Prestige indisponible':`Prestige : +${g} étoile${g>1?'s':''}`}</button>`;
+}
+function renderAll(){renderHUD();renderShop();renderActions()}
+
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b||b.disabled)return;
+  if(b.dataset.buy)buy(b.dataset.buy);
+  else if(b.dataset.unlock)unlock(b.dataset.unlock);
+  else if(b.dataset.up)upgrade(b.dataset.up);
+  else if(b.dataset.act==='sos'){S.money+=5;snd.buy();renderAll();save()}
+  else if(b.id==='prestBtn')prestige();
+  else if(b.id==='mute'){S.muted=!S.muted;renderHUD();save()}
+});
+
+/* =================== Confettis =================== */
+const cf=$('#confetti'),cfx=cf.getContext('2d');let parts=[],cfRun=false;
+function confetti(n){
+  if(reduceMotion)return;
+  cf.width=innerWidth;cf.height=innerHeight;
+  const cols=['#ffd84a','#ff4dd8','#4dffe1','#5dff7a','#ffffff','#ff4d6d'];
+  for(let i=0;i<n;i++)parts.push({x:innerWidth/2+(Math.random()-.5)*160,y:innerHeight*.45,vx:(Math.random()-.5)*16,vy:-Math.random()*14-4,
+    c:pick(cols),s:pick([6,8,10]),life:rint(90,170)});
+  if(!cfRun){cfRun=true;requestAnimationFrame(cfLoop)}
+}
+function cfLoop(){
+  cfx.clearRect(0,0,cf.width,cf.height);
+  parts=parts.filter(p=>p.life>0&&p.y<cf.height+20);
+  for(const p of parts){p.vy+=.35;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.life--;cfx.fillStyle=p.c;cfx.fillRect(Math.round(p.x/2)*2,Math.round(p.y/2)*2,p.s,p.s)}
+  if(parts.length)requestAnimationFrame(cfLoop);else{cfRun=false;cfx.clearRect(0,0,cf.width,cf.height)}
+}
+
+/* =================== Ciel étoilé =================== */
+const sky=$('#sky'),sctx=sky.getContext('2d');let skyStars=[];
+function sizeSky(){
+  sky.width=Math.ceil(innerWidth/3);sky.height=Math.ceil(innerHeight/3);
+  skyStars=Array.from({length:Math.round(sky.width*sky.height/160)},()=>({x:rint(0,sky.width),y:rint(0,sky.height),
+    c:pick(['#ffffff','#ffd84a','#4dffe1','#ff4dd8','#a39bdc']),t:Math.random()}));
+  drawSky();
+}
+function drawSky(){
+  sctx.fillStyle='#0b0820';sctx.fillRect(0,0,sky.width,sky.height);
+  for(const s of skyStars){
+    if(Math.random()<.05)s.t=Math.random();
+    sctx.globalAlpha=.3+s.t*.7;sctx.fillStyle=s.c;sctx.fillRect(s.x,s.y,1,1);
+    if(s.t>.93){sctx.globalAlpha=.5;sctx.fillRect(s.x-1,s.y,1,1);sctx.fillRect(s.x+1,s.y,1,1);sctx.fillRect(s.x,s.y-1,1,1);sctx.fillRect(s.x,s.y+1,1,1)}
+  }
+  sctx.globalAlpha=1;
+}
+if(!reduceMotion)setInterval(drawSky,450);
+
+/* =================== Démarrage =================== */
+$('#coinIcon').src=spr('coin');$('#starIcon').src=spr('star');
+sizeSky();renderTicket();renderAll();
+let rsz;addEventListener('resize',()=>{clearTimeout(rsz);rsz=setTimeout(()=>{sizeSky();if(S.T&&!S.T.done)renderTicket()},200)});
+setInterval(save,5000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
+</script>
+</body>
+</html>
