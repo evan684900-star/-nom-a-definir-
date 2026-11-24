@@ -1,4 +1,4 @@
-# Cosmo Gratte
+# Gambling Galaxy
 
 Un jeu incrémental de tickets à gratter dans l'espace, en pixel art.
 
